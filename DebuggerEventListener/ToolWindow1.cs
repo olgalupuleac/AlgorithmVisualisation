@@ -1,7 +1,12 @@
-﻿using System.Windows.Forms;
+﻿using System.Drawing;
+using System.Windows;
+using System.Windows.Forms;
+using System.Windows.Forms.Integration;
 using System.Windows.Input;
 using EnvDTE;
-using Microsoft.Msagl.Drawing;
+using Microsoft.Msagl.GraphViewerGdi;
+using Color = Microsoft.Msagl.Drawing.Color;
+using Size = System.Drawing.Size;
 
 namespace DebuggerEventListener
 {
@@ -27,9 +32,14 @@ namespace DebuggerEventListener
         /// Initializes a new instance of the <see cref="ToolWindow1"/> class.
         /// </summary>
         ///
+        private EnvDTE.DTE applicationObject;
         private EnvDTE.DebuggerEvents debugEvents;
-
         private EnvDTE.Debugger debugger;
+        private System.Windows.Forms.Form form;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dfs"/> class.
+        /// </summary>
 
         //private 
         public ToolWindow1() : base(null)
@@ -44,44 +54,23 @@ namespace DebuggerEventListener
 
         protected override void Initialize()
         {
-            EnvDTE.DTE applicationObject = (DTE) Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+            applicationObject = (DTE) Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
             // Place the following code in the event handler  
             debugEvents = applicationObject.Events.DebuggerEvents;
             debugEvents.OnContextChanged +=
-                ContextHandler;
-            StartEvents(applicationObject);
+                UpdateGraph;
             debugger = applicationObject.Debugger;
         }
 
-        // Place the following Event handler code  
-        public void StartEvents(DTE dte)
+        private void UpdateGraph(Process newprocess, Program newprogram, Thread newthread, StackFrame newstackframe)
         {
-            ((ToolWindow1Control) this.Content).listBox.Items.Add("Start");
-        }
-
-        public void ContextHandler(EnvDTE.Process newProc,
-            EnvDTE.Program newProg, EnvDTE.Thread newThread, EnvDTE.StackFrame newStkFrame)
-        {
-            if (newStkFrame != null)
+            if (newstackframe == null)
             {
-                Main(newStkFrame);
+                return;
             }
-            else
-            {
-                ((ToolWindow1Control) this.Content).listBox.Items.Add("No stackframe");
-            }
-        }
 
-        public void Main(EnvDTE.StackFrame newStkFrame)
-        {
-            //create a form 
-            System.Windows.Forms.Form form = new System.Windows.Forms.Form();
-            //create a viewer object 
-            Microsoft.Msagl.GraphViewerGdi.GViewer viewer = new Microsoft.Msagl.GraphViewerGdi.GViewer();
-            //create a graph object 
             Microsoft.Msagl.Drawing.Graph graph = new Microsoft.Msagl.Drawing.Graph("graph");
             //create the graph content 
-            graph.Directed = false;
             for (int i = 0; i < 7; i++)
             {
                 for (int j = 0; j < 7; j++)
@@ -91,7 +80,7 @@ namespace DebuggerEventListener
                     if (expr.IsValidValue && expr.Value.Equals("true"))
                     {
                         EnvDTE.Expression isParent = debugger.GetExpression($"p[{j}] == {i}", true);
-                        ((ToolWindow1Control) this.Content).listBox.Items.Add($"{isParent.Name}={isParent.Value}");
+                        //((ToolWindow1Control)this.Content).listBox.Items.Add($"{isParent.Name}={isParent.Value}");
                         if (isParent.IsValidValue && isParent.Value.Equals("true"))
                         {
                             graph.AddEdge($"{i}", $"{j}").Attr.Color = Color.Red;
@@ -104,31 +93,38 @@ namespace DebuggerEventListener
                 }
             }
 
-           if (newStkFrame.FunctionName.Equals("dfs"))
+            if (newstackframe.FunctionName.Equals("dfs"))
             {
-                EnvDTE.Expression arg = newStkFrame.Arguments.Item(1);
+                EnvDTE.Expression arg = newstackframe.Arguments.Item(1);
                 graph.FindNode(arg.Value).Attr.FillColor = Microsoft.Msagl.Drawing.Color.Magenta;
             }
-            /*graph.AddEdge("A", "B");
-            graph.AddEdge("B", "C");
-            graph.AddEdge("A", "C").Attr.Color = Microsoft.Msagl.Drawing.Color.Green;
-            graph.FindNode("A").Attr.FillColor = Microsoft.Msagl.Drawing.Color.Magenta;
-            graph.FindNode("B").Attr.FillColor = Microsoft.Msagl.Drawing.Color.MistyRose;
-            Microsoft.Msagl.Drawing.Node c = graph.FindNode("C");
-            c.Attr.FillColor = Microsoft.Msagl.Drawing.Color.Pale.Green;
-            c.Attr.Shape = Microsoft.Msagl.Drawing.Shape.Diamond;*/
-            //bind the graph to the viewer 
-            viewer.Graph = graph;
-            //associate the viewer with the form 
-            form.SuspendLayout();
-            viewer.Dock = System.Windows.Forms.DockStyle.Fill;
-            //((ToolWindow1Control)this.Content)
-            form.Controls.Add(viewer);
-            //((ToolWindow1Control) this.Content).control = viewer;
-            form.ResumeLayout();
-            //show the form 
-            form.ShowDialog();
-            //form.Refresh();
+
+            //GViewer viewer =;
+            //DfsControl.viewer = viewer;
+
+            ((ToolWindow1Control)this.Content).MyWindowsFormsHost = new WindowsFormsHost() { Child = new GViewer { Graph = graph, Dock = System.Windows.Forms.DockStyle.Fill } };
+            if (form == null)
+            {
+                form = new System.Windows.Forms.Form();
+                form.Size = new Size(600, 600);
+                form.SuspendLayout();
+                form.Controls.Add(new GViewer { Graph = graph, Dock = System.Windows.Forms.DockStyle.Fill });
+                form.ResumeLayout();
+                form.Show();
+            }
+            else
+            {
+                form.SuspendLayout();
+                form.Controls.Clear();
+                form.Controls.Add(new GViewer { Graph = graph, Dock = System.Windows.Forms.DockStyle.Fill });
+                form.ResumeLayout();
+            }
+            //System.Windows.Forms.Form form = new System.Windows.Forms.Form();
+            //form.SuspendLayout();
+            //
+            //
+            //form.Show();
+            //ToolWindow1Control.MyWindowsFormsHost = new WindowsFormsHost() {Child = viewer};
         }
     }
 }

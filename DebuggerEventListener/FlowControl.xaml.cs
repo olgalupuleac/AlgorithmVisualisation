@@ -5,14 +5,14 @@
     using System.Windows.Controls;
 
     /// <summary>
-    /// Interaction logic for DiagramControl.
+    /// Interaction logic for FlowControl.
     /// </summary>
-    public partial class DiagramControl : UserControl
+    public partial class FlowControl : UserControl
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagramControl"/> class.
+        /// Initializes a new instance of the <see cref="FlowControl"/> class.
         /// </summary>
-        public DiagramControl()
+        public FlowControl()
         {
             this.InitializeComponent();
         }
@@ -28,7 +28,7 @@
         {
             MessageBox.Show(
                 string.Format(System.Globalization.CultureInfo.CurrentUICulture, "Invoked '{0}'", this.ToString()),
-                "Diagram");
+                "Flow");
         }
     }
 }

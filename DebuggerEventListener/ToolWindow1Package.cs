@@ -38,9 +38,7 @@ namespace DebuggerEventListener
     [ProvideToolWindow(typeof(ToolWindow1))]
     [Guid(ToolWindow1Package.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideToolWindow(typeof(Graph))]
-    [ProvideToolWindow(typeof(TelerikGraph))]
-    [ProvideToolWindow(typeof(Diagram))]
+    [ProvideToolWindow(typeof(Flow))]
     public sealed class ToolWindow1Package : AsyncPackage
     {
         /// <summary>
@@ -74,10 +72,7 @@ namespace DebuggerEventListener
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await ToolWindow1Command.InitializeAsync(this);
-            await GraphCommand.InitializeAsync(this);
-            await TelerikGraphCommand.InitializeAsync(this);
-            await DiagramCommand.InitializeAsync(this);
-            await Command1.InitializeAsync(this);
+            await FlowCommand.InitializeAsync(this);
         }
 
         #endregion

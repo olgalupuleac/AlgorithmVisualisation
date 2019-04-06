@@ -54,22 +54,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Command1.cs" />
-    <Compile Include="Diagram.cs" />
-    <Compile Include="DiagramCommand.cs" />
-    <Compile Include="DiagramControl.xaml.cs">
-      <DependentUpon>DiagramControl.xaml</DependentUpon>
+    <Compile Include="Flow.cs" />
+    <Compile Include="FlowCommand.cs" />
+    <Compile Include="FlowControl.xaml.cs">
+      <DependentUpon>FlowControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Graph.cs" />
-    <Compile Include="GraphCommand.cs" />
-    <Compile Include="GraphControl.xaml.cs">
-      <DependentUpon>GraphControl.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="GraphVisualization.cs" />
+    <Compile Include="IGraph.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TelerikGraph.cs" />
-    <Compile Include="TelerikGraphCommand.cs" />
-    <Compile Include="TelerikGraphControl.xaml.cs">
-      <DependentUpon>TelerikGraphControl.xaml</DependentUpon>
+    <Compile Include="ProvideToolboxControlAttribute.cs" />
+    <Compile Include="ToolboxControl1.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ToolboxControl1.Designer.cs">
+      <DependentUpon>ToolboxControl1.cs</DependentUpon>
     </Compile>
     <Compile Include="ToolWindow1.cs" />
     <Compile Include="ToolWindow1Command.cs" />
@@ -87,15 +85,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="index.html" />
-    <Content Include="Resources\Command1.png" />
-    <Content Include="Resources\DiagramCommand.png" />
-    <Content Include="Resources\GraphCommand.png" />
-    <Content Include="Resources\TelerikGraphCommand.png" />
+    <Content Include="Resources\FlowCommand.png" />
     <Content Include="Resources\ToolWindow1Command.png" />
     <Content Include="Resources\ToolWindow1Package.ico" />
     <Content Include="stylesheet.css" />
     <VSCTCompile Include="ToolWindow1Package.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
+      <SubType>Designer</SubType>
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
@@ -200,21 +196,14 @@
     <Reference Include="UIAutomationProvider" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
+    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\analyzers\cs\Microsoft.VisualStudio.SDK.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\analyzers\cs\Microsoft.VisualStudio.Threading.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="DiagramControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="GraphControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="TelerikGraphControl.xaml">
+    <Page Include="FlowControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -225,6 +214,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Licenses.licx" />
+    <EmbeddedResource Include="ToolboxControl1.resx">
+      <DependentUpon>ToolboxControl1.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>

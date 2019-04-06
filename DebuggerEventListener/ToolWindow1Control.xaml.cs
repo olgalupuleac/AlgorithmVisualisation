@@ -1,4 +1,14 @@
-﻿namespace DebuggerEventListener
+﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.Threading;
+using System.Windows.Data;
+using System.Windows.Forms.Integration;
+using System.Xml;
+using Microsoft.Msagl.GraphViewerGdi;
+
+namespace DebuggerEventListener
 {
     using System.Diagnostics.CodeAnalysis;
     using System.Windows;
@@ -7,7 +17,7 @@
     /// <summary>
     /// Interaction logic for ToolWindow1Control.
     /// </summary>
-    public partial class ToolWindow1Control : UserControl
+    public partial class ToolWindow1Control : UserControl, INotifyPropertyChanged
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ToolWindow1Control"/> class.
@@ -15,20 +25,83 @@
         public ToolWindow1Control()
         {
             this.InitializeComponent();
+            this.DataContext = this;
+
         }
 
-        /// <summary>
-        /// Handles click on the button by displaying a message box.
-        /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event args.</param>
-        [SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions", Justification = "Sample code")]
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Default event handler naming pattern")]
-        private void button1_Click(object sender, RoutedEventArgs e)
+        public static GViewer viewer { get; set; } = new GViewer();
+
+        //public static WindowsFormsHost MyWindowsFormsHost;
+        public static GViewer viwer;
+
+        static ToolWindow1Control()
         {
-            MessageBox.Show(
-                string.Format(System.Globalization.CultureInfo.CurrentUICulture, "Invoked '{0}'", this.ToString()),
-                "ToolWindow1");
+            viwer = new GViewer();
+            
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /*static DfsControl()
+        {
+            viewer = new GViewer();
+        }*/
+
+        private static WindowsFormsHost windows = new WindowsFormsHost() { Child = viewer };
+
+        public WindowsFormsHost MyWindowsFormsHost
+        {
+            get
+            {
+                Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " Getting value");
+                /*System.Windows.Forms.Form form = new System.Windows.Forms.Form();
+                //form.SuspendLayout();
+                form.Controls.Add(new GViewer { Graph = (windows.Child as GViewer).Graph, Dock = System.Windows.Forms.DockStyle.Fill });
+                //form.ResumeLayout();
+                form.Show();*/
+                return windows;
+            }
+
+            set
+            {
+                windows = value;
+                Debug.WriteLine("Changing value");
+
+                NotifyPropertyChanged("MyWindowsFormsHost");
+
+                /*System.Windows.Forms.Form form = new System.Windows.Forms.Form();
+                form.Controls.Add((windows.Child as GViewer));
+                form.Show();*/
+            }
+        }
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                Debug.WriteLine("Notify property changed");
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            }
+
+        }
+    }
+
+    public class DebugDataBindingConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType,
+            object parameter, CultureInfo culture)
+        {
+            System.Windows.Forms.Form form = new System.Windows.Forms.Form();
+            form.Controls.Add(((WindowsFormsHost)value).Child as GViewer);
+            form.Show();
+            //Debugger.Break();
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType,
+            object parameter, CultureInfo culture)
+        {
+            //Debugger.Break();
+            return value;
         }
     }
 }
