@@ -36,6 +36,7 @@ namespace DebuggerEventListener
         private System.Windows.Forms.Form form;
         private Graph graph;
         private List<Edge> edges;
+        private double edgeSize;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Flow"/> class.
@@ -101,7 +102,7 @@ namespace DebuggerEventListener
 
             if (Math.Abs(cf.Item1) == Math.Abs(cf.Item2))
             {
-                edge.Attr.LineWidth *= 3;
+                edge.Attr.LineWidth = 3 * edgeSize;
             }
         }
 
@@ -118,6 +119,7 @@ namespace DebuggerEventListener
                 string to = debugger.GetExpression($"edges[{i}].to").Value;
                 Tuple<int, int> cf = CapacityAndFlow(i);
                 Edge edge = graph.AddEdge(from, EdgeLabel(cf), to);
+                edgeSize = edge.Attr.LineWidth;
                 edge.Label.FontSize = 6;
                 edges.Add(edge);
                 SetEdgeStyle(edge, cf);
@@ -137,6 +139,7 @@ namespace DebuggerEventListener
             {
                 graphNode.Label.Text = NodeLabel(graphNode);
             }
+            HighlightDfsEdges();
         }
 
 
@@ -150,57 +153,26 @@ namespace DebuggerEventListener
 
             foreach (Edge edge in edges)
             {
+                edge.Attr.LineWidth = edgeSize;
                 edge.Label.FontColor = Color.Black;
-                if (edge.Attr.Color == Color.Aquamarine)
-                {
-                    edge.Attr.Color = Color.Black;
-                }
-            }
-        }
-
-        private void HighlightTmpEdge(string edgeId)
-        {
-            Expression idExpr = debugger.GetExpression(edgeId);
-            Debug.WriteLine($"{edgeId}={idExpr.Value}");
-            if (idExpr.IsValidValue)
-            {
-                int id = Int32.Parse(idExpr.Value) / 2;
-                if (id >= 0 && id < edges.Count && edges[id].Attr.Color != Color.Red)
-                {
-                    edges[id].Attr.Color = Color.Aquamarine;
-                }
+                edge.Attr.Color = Color.Black;
             }
         }
 
 
-        private void HighlightDfsEdges(Thread newthread)
+        private void HighlightDfsEdges()
         {
-            for (int i = 2; i < newthread.StackFrames.Count; i++)
+            int dfsEdgesSize = Int32.Parse(debugger.GetExpression("dfs_edges.size()").Value);
+            for (int i = 0; i < dfsEdgesSize; i++)
             {
-                StackFrame sf = newthread.StackFrames.Item(i);
-                if (sf.FunctionName.Equals("dfs")
-                    && newthread.StackFrames.Item(i - 1).FunctionName.Equals("dfs"))
-                {
-                    foreach (Expression item in sf.Locals)
-                    {
-                        Debug.WriteLine($"{item.Name}={item.Value}");
-                        if (item.Name.Equals("id"))
-                        {
-                            Debug.WriteLine("Should be red");
-                            int id = Int32.Parse(item.Value) / 2;
-                            edges[id].Attr.Color = Color.Red;
-                            //string from = sf.Arguments.Item(1).Value;
-                            /*if (edges[id].Source.Equals(from))
-                            {
-                                edges[id].Attr.ArrowheadAtTarget = ArrowStyle.Normal;
-                            }
-                            else
-                            {
-                                edges[id].Attr.ArrowheadAtSource = ArrowStyle.Normal;
-                            }*/
-                        }
-                    }
-                }
+                var id = Int32.Parse(debugger.GetExpression($"dfs_edges[{i}]").Value);
+                edges[id].Attr.Color = Color.Red;
+            }
+            int flowEdgesSize = Int32.Parse(debugger.GetExpression("flow_edges.size()").Value);
+            for (int i = 0; i < flowEdgesSize; i++)
+            {
+                var id = Int32.Parse(debugger.GetExpression($"flow_edges[{i}]").Value);
+                edges[id].Attr.Color = Color.SkyBlue;
             }
         }
 
@@ -208,18 +180,16 @@ namespace DebuggerEventListener
         {
             for (int i = 0; i < edges.Count; i++)
             {
-                //Debug.WriteLine($"{edges[i].LabelText} ?= {cap},{flow}");
                 Tuple<int, int> cf = CapacityAndFlow(2 * i);
+                SetEdgeStyle(edges[i], cf);
+                //Debug.WriteLine($"{edges[i].LabelText} ?= {cap},{flow}");
                 string label = EdgeLabel(cf);
                 if (edges[i].LabelText.Equals(label))
                 {
                     continue;
                 }
-
                 edges[i].Label.Text = label;
                 edges[i].Label.FontColor = Color.Red;
-                SetEdgeStyle(edges[i], cf);
-                //edge.Attr.ArrowheadAtTarget = ArrowStyle.None;
             }
 
             foreach (Node node in graph.Nodes)
@@ -231,49 +201,23 @@ namespace DebuggerEventListener
                 }
 
                 node.Label.Text = label;
-                node.Label.FontColor = Color.Red;
+                // node.Label.FontColor = Color.Red;
             }
         }
 
 
-        private void RenderDfs(Thread newthread, StackFrame newstackframe)
+        private void RefreshGraph(Thread newthread, StackFrame newstackframe)
         {
-            if (graph == null)
-            {
-                RenderGraph();
-            }
-
             ClearGraph();
-            HighlightTmpEdge("id");
-            HighlightDfsEdges(newthread);
+            HighlightDfsEdges();
             HighlightLastChanges();
-            string v = newstackframe.Arguments.Item(1).Value;
-            graph.FindNode(v).Attr.Color = Color.Red;
-        }
-
-
-        private void RenderBfs()
-        {
-            if (graph == null)
+            if (newstackframe.FunctionName.Equals("dfs"))
             {
-                RenderGraph();
+                string v = newstackframe.Arguments.Item(1).Value;
+                graph.FindNode(v).Attr.Color = Color.Red;
             }
-
-            ClearGraph();
-            Expression vExpr = debugger.GetExpression("v");
-            if (vExpr.IsValidValue)
-            {
-                Node v = graph.FindNode(vExpr.Value);
-                if (v != null)
-                {
-                    v.Attr.Color = Color.Red;
-                }
-            }
-
-            HighlightTmpEdge("x");
-            HighlightLastChanges();
         }
-
+    
         private void UpdateGraph(Process newprocess, Program newprogram, Thread newthread, StackFrame newstackframe)
         {
             if (newstackframe == null)
@@ -281,7 +225,15 @@ namespace DebuggerEventListener
                 return;
             }
 
-            switch (newstackframe.FunctionName)
+            if (graph == null)
+            {
+                RenderGraph();
+            }
+            else
+            {
+                RefreshGraph(newthread, newstackframe);
+            }
+            /*switch (newstackframe.FunctionName)
             {
                 case "dfs":
                     RenderDfs(newthread, newstackframe);
@@ -292,7 +244,7 @@ namespace DebuggerEventListener
                 default:
                     RenderGraph();
                     break;
-            }
+            }*/
 
             if (form == null)
             {
